@@ -39,3 +39,36 @@
 
 # debug information files
 *.dwo
+
+# Build directories
+build/
+cmake-build-*/
+.cmake/
+
+# Conan
+conaninfo.txt
+conanbuildinfo.*
+conan.lock
+graph_info.json
+
+# Qt
+*.pro.user
+*.pro.user.*
+*.qmlc
+*.jsc
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+*.autosave
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Cache
+tla_visualiser_cache/

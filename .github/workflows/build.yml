@@ -1,0 +1,144 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [x64, arm64]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up QEMU
+      if: matrix.arch == 'arm64'
+      uses: docker/setup-qemu-action@v2
+      with:
+        platforms: arm64
+    
+    - name: Install Qt6
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qt6-base-dev qt6-declarative-dev libqt6quick6 \
+                                libcurl4-openssl-dev cmake ninja-build
+    
+    - name: Install Conan
+      run: |
+        pip install conan
+        conan profile detect
+    
+    - name: Configure Conan
+      run: |
+        cd ${{ github.workspace }}
+        conan install . --output-folder=build --build=missing
+    
+    - name: Configure CMake
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake
+    
+    - name: Build
+      run: cmake --build build --config Release
+    
+    - name: Test
+      run: |
+        cd build
+        ctest --output-on-failure
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: tla_visualiser-linux-${{ matrix.arch }}
+        path: build/tla_visualiser
+
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install Qt6
+      run: |
+        brew install qt@6 curl cmake ninja
+        echo "Qt6_DIR=$(brew --prefix qt@6)/lib/cmake/Qt6" >> $GITHUB_ENV
+    
+    - name: Install Conan
+      run: |
+        pip3 install conan
+        conan profile detect
+    
+    - name: Configure Conan
+      run: |
+        cd ${{ github.workspace }}
+        conan install . --output-folder=build --build=missing
+    
+    - name: Configure CMake
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
+          -DQt6_DIR=${{ env.Qt6_DIR }}
+    
+    - name: Build
+      run: cmake --build build --config Release
+    
+    - name: Test
+      run: |
+        cd build
+        ctest --output-on-failure
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: tla_visualiser-macos
+        path: build/tla_visualiser.app
+
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install Qt6
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.5.0'
+        arch: 'win64_msvc2019_64'
+    
+    - name: Install dependencies
+      run: |
+        choco install cmake ninja
+        pip install conan
+        conan profile detect
+    
+    - name: Configure Conan
+      run: |
+        cd ${{ github.workspace }}
+        conan install . --output-folder=build --build=missing
+    
+    - name: Configure CMake
+      run: |
+        cmake -B build -G Ninja `
+          -DCMAKE_BUILD_TYPE=Release `
+          -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake
+    
+    - name: Build
+      run: cmake --build build --config Release
+    
+    - name: Test
+      run: |
+        cd build
+        ctest --output-on-failure
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: tla_visualiser-windows
+        path: build/tla_visualiser.exe
