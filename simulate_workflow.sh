@@ -18,6 +18,9 @@ RUN_TESTS=${RUN_TESTS:-true}
 BUILD_TYPE=${BUILD_TYPE:-Release}
 PLATFORM=$(uname -s)
 
+# File patterns for checking
+FILE_PATTERNS="*.cpp *.h *.qml"
+
 # Job results tracking
 LINT_RESULT="pending"
 BUILD_RESULT="pending"
@@ -64,7 +67,7 @@ run_lint_job() {
     
     # Check for trailing whitespace
     echo "Checking for trailing whitespace..."
-    if git grep -I --line-number --perl-regexp '\s+$' -- '*.cpp' '*.h' '*.qml' 2>/dev/null; then
+    if git grep -I --line-number --perl-regexp '\s+$' -- $FILE_PATTERNS 2>/dev/null; then
         print_warning "Found trailing whitespace (not failing - should be fixed eventually)"
     else
         print_success "No trailing whitespace found"
@@ -72,7 +75,7 @@ run_lint_job() {
     
     # Check for TODO/FIXME without issue reference
     echo "Checking for untracked TODOs..."
-    if git grep -n "TODO\|FIXME" -- '*.cpp' '*.h' '*.qml' 2>/dev/null | grep -v "#[0-9]"; then
+    if git grep -n "TODO\|FIXME" -- $FILE_PATTERNS 2>/dev/null | grep -v "#[0-9]"; then
         print_warning "Found TODOs without issue references (not failing)"
     fi
     
@@ -129,9 +132,13 @@ run_build_job() {
     # Install Conan dependencies if conan is available
     if command -v conan &> /dev/null; then
         echo "Installing Conan dependencies..."
-        conan install . --output-folder=build --build=missing || {
-            print_warning "Conan install failed - continuing anyway"
-        }
+        if ! conan install . --output-folder=build --build=missing; then
+            print_warning "Conan install failed - build may fail due to missing dependencies"
+            print_warning "Consider installing Conan: pip install conan"
+        fi
+    else
+        print_warning "Conan not found - build may fail due to missing dependencies"
+        print_warning "Install with: pip install conan"
     fi
     
     # Configure CMake

@@ -361,8 +361,9 @@ Branch name pattern: main
 
 2. **Workflow run badges:**
    ```markdown
-   ![Build Status](https://github.com/johndoe6345789/tla_visualiser/workflows/Build%20and%20Test/badge.svg)
+   ![Build Status](https://github.com/OWNER/REPO/workflows/Build%20and%20Test/badge.svg)
    ```
+   Replace `OWNER/REPO` with your repository details.
 
 3. **Notification settings:**
    - Configure in repository settings

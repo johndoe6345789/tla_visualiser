@@ -36,8 +36,9 @@ jobs:
     - name: Check for TODO/FIXME without issue reference
       run: |
         echo "Checking for untracked TODOs..."
-        ! git grep -n "TODO\|FIXME" -- '*.cpp' '*.h' '*.qml' | grep -v "#[0-9]" || \
+        if git grep -n "TODO\|FIXME" -- '*.cpp' '*.h' '*.qml' | grep -v "#[0-9]"; then
           echo "Warning: Found TODOs without issue references (not failing build)"
+        fi
     
     - name: Verify CMake syntax
       run: |
