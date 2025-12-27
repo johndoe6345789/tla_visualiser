@@ -210,6 +210,45 @@ GitHub Actions workflows automatically:
 - Run all tests
 - Upload build artifacts
 
+### Gated Tree Workflow
+
+The project uses a **gated tree workflow** pattern to ensure code quality:
+
+1. **Lint Job**: Fast pre-build checks (formatting, TODOs, CMake syntax)
+2. **Build Jobs**: Platform-specific builds (Linux, macOS, Windows) that depend on lint
+3. **Gate Job**: Final check that all required jobs passed
+
+This ensures that:
+- No code can be merged if lint checks fail
+- All platforms must build successfully
+- All tests must pass
+- The gate provides a single "merge-ready" indicator
+
+### Workflow Simulation
+
+Test the CI workflow locally before pushing:
+
+```bash
+# Run full workflow simulation
+./simulate_workflow.sh
+
+# Skip tests (faster iteration)
+./simulate_workflow.sh --no-tests
+
+# Debug build
+./simulate_workflow.sh --debug
+
+# Get help
+./simulate_workflow.sh --help
+```
+
+### Manual Workflow Triggers
+
+You can manually trigger the workflow from GitHub Actions tab with custom parameters:
+- Select specific platforms to build (linux, macos, windows)
+- Toggle test execution
+- Useful for testing workflow changes
+
 ## Contributing
 
 1. Fork the repository
