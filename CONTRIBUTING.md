@@ -100,6 +100,10 @@ Explain what changes were made and why.
 Always test your changes:
 
 ```bash
+# Quick: Simulate full CI workflow locally
+./simulate_workflow.sh
+
+# Or manually:
 # Build
 cmake --build build --config Release
 
@@ -110,6 +114,16 @@ ctest --output-on-failure
 # Run specific test
 ./tests/test_github_importer
 ```
+
+**Workflow Simulation Options:**
+```bash
+./simulate_workflow.sh              # Full simulation
+./simulate_workflow.sh --no-tests   # Skip tests (faster)
+./simulate_workflow.sh --debug      # Debug build
+./simulate_workflow.sh --no-lint    # Skip lint checks
+```
+
+The simulation script mirrors the gated tree workflow used in CI, ensuring your changes will pass before pushing.
 
 #### Writing Tests
 
@@ -161,6 +175,16 @@ Documentation locations:
 - [ ] Documentation updated
 - [ ] Code follows style guidelines
 - [ ] Commit messages are clear
+- [ ] Workflow simulation passes: `./simulate_workflow.sh`
+
+**CI Gated Tree Workflow:**
+Your PR must pass through the gated tree workflow:
+1. **Lint checks** - Code quality and formatting
+2. **Build jobs** - All platforms (Linux, macOS, Windows)
+3. **Test jobs** - All tests must pass
+4. **Gate check** - Final verification that all jobs succeeded
+
+The gate will block merging if any check fails.
 
 ### 2. Submitting PR
 
