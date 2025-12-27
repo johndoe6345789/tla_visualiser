@@ -18,6 +18,10 @@ on:
         default: 'linux,macos,windows'
         type: string
 
+# Restrict GITHUB_TOKEN permissions for security
+permissions:
+  contents: read
+
 jobs:
   # Pre-build checks - fast failure for common issues
   lint:
