@@ -88,13 +88,13 @@ void TraceViewerModel::loadTrace(const TLCRunner::CounterExample& trace,
         
         if (it != results.states.end()) {
             Impl::TraceStep step;
-            step.step_number = step_num++;
+            step.step_number = step_num;
             step.state_id = state_id;
             step.state_description = it->description;
             step.variables = it->variables;
             
             // Find action (transition to this state)
-            if (step_num > 1) {
+            if (step_num > 0) {  // Fixed: check before increment
                 auto trans_it = std::find_if(results.transitions.begin(), results.transitions.end(),
                     [state_id](const TLCRunner::Transition& t) { return t.to_state == state_id; });
                 if (trans_it != results.transitions.end()) {
@@ -105,6 +105,7 @@ void TraceViewerModel::loadTrace(const TLCRunner::CounterExample& trace,
             }
             
             pImpl->steps.push_back(step);
+            step_num++;
         }
     }
 

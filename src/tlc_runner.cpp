@@ -1,12 +1,12 @@
 #include "tlc_runner.h"
+#include <QProcess>
+#include <QFileInfo>
 #include <thread>
 #include <chrono>
 #include <fstream>
 #include <sstream>
-#include <array>
-#include <memory>
-#include <cstdio>
 #include <iostream>
+#include <regex>
 
 namespace tla_visualiser {
 
@@ -33,43 +33,43 @@ public:
         }
     }
 
-    std::string executeCommand(const std::string& cmd) {
-        std::array<char, 128> buffer;
-        std::string result;
+    std::string executeCommand(const std::string& program, const QStringList& arguments) {
+        QProcess process;
+        process.start(QString::fromStdString(program), arguments);
         
-        std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
-        if (!pipe) {
+        if (!process.waitForStarted()) {
             return "";
         }
         
-        while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-            result += buffer.data();
+        if (!process.waitForFinished(-1)) {  // Wait indefinitely
+            return "";
         }
         
-        return result;
+        QByteArray output = process.readAllStandardOutput();
+        QByteArray errorOutput = process.readAllStandardError();
+        
+        return output.toStdString() + errorOutput.toStdString();
     }
 
     void parseResults(const std::string& output) {
-        // Parse TLC output (simplified - real implementation would be more robust)
+        // Parse TLC output with more robust regex matching
         std::istringstream stream(output);
         std::string line;
         
+        // Regex patterns for extracting counts
+        std::regex states_pattern(R"((\d+)\s+states\s+generated)");
+        std::regex distinct_pattern(R"((\d+)\s+distinct\s+states)");
+        std::smatch match;
+        
         while (std::getline(stream, line)) {
-            // Look for state count
-            if (line.find("states generated") != std::string::npos) {
-                // Extract number
-                size_t pos = line.find_first_of("0123456789");
-                if (pos != std::string::npos) {
-                    results.states_generated = std::stoi(line.substr(pos));
-                }
+            // Look for state count with proper regex
+            if (std::regex_search(line, match, states_pattern)) {
+                results.states_generated = std::stoi(match[1]);
             }
             
             // Look for distinct states
-            if (line.find("distinct states") != std::string::npos) {
-                size_t pos = line.find_first_of("0123456789");
-                if (pos != std::string::npos) {
-                    results.distinct_states = std::stoi(line.substr(pos));
-                }
+            if (std::regex_search(line, match, distinct_pattern)) {
+                results.distinct_states = std::stoi(match[1]);
             }
             
             // Look for errors
@@ -102,14 +102,32 @@ bool TLCRunner::startModelCheck(const std::string& spec_file, const std::string&
     pImpl->runner_thread = std::thread([this, spec_file, config_file]() {
         auto start_time = std::chrono::steady_clock::now();
 
-        // Build TLC command
-        std::string cmd = "java -jar tla2tools.jar -tool " + spec_file;
+        // Build TLC arguments safely (no shell injection)
+        QStringList args;
+        args << "-jar" << "tla2tools.jar" << "-tool";
+        
+        // Sanitize spec_file path
+        QFileInfo specInfo(QString::fromStdString(spec_file));
+        if (!specInfo.exists()) {
+            pImpl->results.error_message = "Spec file does not exist: " + spec_file;
+            pImpl->status = Status::Failed;
+            pImpl->results.status = Status::Failed;
+            if (pImpl->status_callback) {
+                pImpl->status_callback(pImpl->status);
+            }
+            return;
+        }
+        args << specInfo.absoluteFilePath();
+        
         if (!config_file.empty()) {
-            cmd += " -config " + config_file;
+            QFileInfo configInfo(QString::fromStdString(config_file));
+            if (configInfo.exists()) {
+                args << "-config" << configInfo.absoluteFilePath();
+            }
         }
 
-        // Execute TLC
-        std::string output = pImpl->executeCommand(cmd);
+        // Execute TLC with proper argument passing
+        std::string output = pImpl->executeCommand("java", args);
         
         auto end_time = std::chrono::steady_clock::now();
         std::chrono::duration<double> elapsed = end_time - start_time;

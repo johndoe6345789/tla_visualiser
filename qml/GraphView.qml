@@ -55,8 +55,9 @@ Item {
                         ctx.lineWidth = 2
                         // Edge drawing would use model.getTransitions()
 
-                        // Draw nodes
-                        for (var i = 0; i < nodeCount && i < 10; i++) {
+                        // Draw all nodes (no arbitrary limit)
+                        var maxNodesToShow = Math.min(nodeCount, 100)  // Reasonable limit for performance
+                        for (var i = 0; i < maxNodesToShow; i++) {
                             var angle = (i / nodeCount) * 2 * Math.PI
                             var x = centerX + radius * Math.cos(angle)
                             var y = centerY + radius * Math.sin(angle)
@@ -71,6 +72,14 @@ Item {
                             ctx.textAlign = "center"
                             ctx.textBaseline = "middle"
                             ctx.fillText("S" + i, x, y)
+                        }
+                        
+                        // Show indicator if there are more nodes
+                        if (nodeCount > maxNodesToShow) {
+                            ctx.fillStyle = "#666666"
+                            ctx.font = "14px sans-serif"
+                            ctx.textAlign = "center"
+                            ctx.fillText("... and " + (nodeCount - maxNodesToShow) + " more states", centerX, height - 20)
                         }
                     }
                 }

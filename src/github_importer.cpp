@@ -22,8 +22,22 @@ public:
 
     Impl() {
         curl = curl_easy_init();
-        // Create cache directory in user's home
-        cache_dir = std::filesystem::temp_directory_path() / "tla_visualiser_cache";
+        // Create cache directory - prefer user-specific cache location
+#ifdef _WIN32
+        const char* appdata = std::getenv("APPDATA");
+        if (appdata) {
+            cache_dir = std::string(appdata) + "/tla_visualiser/cache";
+        } else {
+            cache_dir = std::filesystem::temp_directory_path() / "tla_visualiser_cache";
+        }
+#else
+        const char* home = std::getenv("HOME");
+        if (home) {
+            cache_dir = std::string(home) + "/.cache/tla_visualiser";
+        } else {
+            cache_dir = std::filesystem::temp_directory_path() / "tla_visualiser_cache";
+        }
+#endif
         std::filesystem::create_directories(cache_dir);
     }
 
@@ -143,8 +157,9 @@ void GitHubImporter::cacheContent(const UrlInfo& url_info, const std::string& co
                             url_info.branch + "_" +
                             url_info.file_path;
     
-    // Replace path separators with underscores
+    // Replace both forward and backward slashes with underscores
     std::replace(cache_file.begin(), cache_file.end(), '/', '_');
+    std::replace(cache_file.begin(), cache_file.end(), '\\', '_');
     
     std::ofstream out(cache_file);
     if (out) {
@@ -159,7 +174,9 @@ std::string GitHubImporter::loadFromCache(const UrlInfo& url_info) {
                             url_info.branch + "_" +
                             url_info.file_path;
     
+    // Replace both forward and backward slashes with underscores
     std::replace(cache_file.begin(), cache_file.end(), '/', '_');
+    std::replace(cache_file.begin(), cache_file.end(), '\\', '_');
     
     std::ifstream in(cache_file);
     if (!in) return "";

@@ -11,14 +11,21 @@ public:
     std::vector<TLCRunner::State> states;
     std::vector<TLCRunner::Transition> transitions;
     std::vector<std::pair<double, double>> positions;
+    double layout_radius = 200.0;  // Configurable radius
 
     void calculateLayout() {
-        // Simple circular layout
+        // Simple circular layout with configurable radius
         int n = states.size();
         if (n == 0) return;
 
         positions.clear();
-        double radius = 200.0;
+        
+        // Adjust radius based on number of nodes for better spacing
+        double radius = layout_radius;
+        if (n > 10) {
+            radius = layout_radius * (1.0 + std::log(n / 10.0));
+        }
+        
         double angle_step = 2.0 * M_PI / n;
 
         for (int i = 0; i < n; ++i) {
