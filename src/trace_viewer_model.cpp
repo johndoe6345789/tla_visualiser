@@ -94,7 +94,8 @@ void TraceViewerModel::loadTrace(const TLCRunner::CounterExample& trace,
             step.variables = it->variables;
             
             // Find action (transition to this state)
-            if (step_num > 0) {  // Fixed: check before increment
+            // Only non-initial steps have transitions
+            if (step_num > 0) {
                 auto trans_it = std::find_if(results.transitions.begin(), results.transitions.end(),
                     [state_id](const TLCRunner::Transition& t) { return t.to_state == state_id; });
                 if (trans_it != results.transitions.end()) {

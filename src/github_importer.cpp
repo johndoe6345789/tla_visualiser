@@ -23,19 +23,34 @@ public:
     Impl() {
         curl = curl_easy_init();
         // Create cache directory - prefer user-specific cache location
+        // Fallback to a subdirectory in temp if user directories unavailable
 #ifdef _WIN32
         const char* appdata = std::getenv("APPDATA");
         if (appdata) {
             cache_dir = std::string(appdata) + "/tla_visualiser/cache";
         } else {
-            cache_dir = std::filesystem::temp_directory_path() / "tla_visualiser_cache";
+            // Windows fallback: use ProgramData or temp with warning
+            const char* programdata = std::getenv("ProgramData");
+            if (programdata) {
+                cache_dir = std::string(programdata) + "/tla_visualiser/cache";
+            } else {
+                cache_dir = std::filesystem::temp_directory_path() / "tla_visualiser_cache";
+                std::cerr << "Warning: Using temp directory for cache. Consider setting APPDATA." << std::endl;
+            }
         }
 #else
         const char* home = std::getenv("HOME");
         if (home) {
             cache_dir = std::string(home) + "/.cache/tla_visualiser";
         } else {
-            cache_dir = std::filesystem::temp_directory_path() / "tla_visualiser_cache";
+            // Unix fallback: try XDG or temp with warning
+            const char* xdg_cache = std::getenv("XDG_CACHE_HOME");
+            if (xdg_cache) {
+                cache_dir = std::string(xdg_cache) + "/tla_visualiser";
+            } else {
+                cache_dir = std::filesystem::temp_directory_path() / "tla_visualiser_cache";
+                std::cerr << "Warning: Using temp directory for cache. Consider setting HOME or XDG_CACHE_HOME." << std::endl;
+            }
         }
 #endif
         std::filesystem::create_directories(cache_dir);

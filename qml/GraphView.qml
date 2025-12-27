@@ -55,8 +55,8 @@ Item {
                         ctx.lineWidth = 2
                         // Edge drawing would use model.getTransitions()
 
-                        // Draw all nodes (no arbitrary limit)
-                        var maxNodesToShow = Math.min(nodeCount, 100)  // Reasonable limit for performance
+                        // Draw nodes (limit to 100 for performance)
+                        var maxNodesToShow = Math.min(nodeCount, 100)
                         for (var i = 0; i < maxNodesToShow; i++) {
                             var angle = (i / nodeCount) * 2 * Math.PI
                             var x = centerX + radius * Math.cos(angle)
