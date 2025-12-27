@@ -112,15 +112,22 @@ run_build_job() {
     
     # Install dependencies (basic check)
     echo "Checking build dependencies..."
-    
+
     if ! command -v cmake &> /dev/null; then
         print_error "CMake not found"
         BUILD_RESULT="failed"
         return 1
     fi
-    
+
     if ! command -v conan &> /dev/null; then
         print_warning "Conan not found - attempting to continue"
+    fi
+
+    echo "Checking for Qt6..."
+    if ! cmake --find-package -DNAME=Qt6 -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST >/dev/null 2>&1; then
+        print_warning "Qt6 not found - skipping build. Install Qt6 to enable building."
+        BUILD_RESULT="skipped"
+        return 0
     fi
     
     # Configure and build
@@ -182,9 +189,13 @@ run_test_job() {
         TEST_RESULT="skipped"
         return 0
     fi
-    
+
     # Check if build passed
-    if [ "$BUILD_RESULT" != "success" ]; then
+    if [ "$BUILD_RESULT" == "skipped" ]; then
+        print_warning "Tests skipped because build was skipped"
+        TEST_RESULT="skipped"
+        return 0
+    elif [ "$BUILD_RESULT" != "success" ]; then
         print_error "Cannot test: Build job did not pass"
         TEST_RESULT="failed"
         return 1
