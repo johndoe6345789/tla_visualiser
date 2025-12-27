@@ -1,4 +1,6 @@
 #include <QtTest/QtTest>
+#include <QDir>
+#include <QFile>
 #include "tlc_runner.h"
 
 class TestTLCRunner : public QObject
